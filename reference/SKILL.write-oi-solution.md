@@ -129,3 +129,13 @@ read problem → translate mechanic to plain language → strip mechanic (easier
 → define all notation → write style-conformant C++ → brute-force + step-walk validation
 → report
 ```
+
+
+## Repository File Architecture Conventions
+
+When operating inside the `luogu-problem-solution` repository, follow this directory layout:
+
+- **Problem Statements (`statement/`)**: Read problem statements from `statement/P{xxxx}-P{yyyy}/P{id}.md` (sharded by 1000s, e.g., `statement/P1000-P1999/P1001.md`).
+- **Solution Writeups (`solution/`)**: Save completed solution writeups to `solution/P{xxxx}-P{yyyy}/P{id}_solution.md` (e.g., `solution/P1000-P1999/P1001_solution.md`).
+- **Intermediate & Verification Files (`appendix/`)**: Save all standard programs (`P{id}.cpp`), brute-force baselines (`P{id}_brute.cpp`), generators (`P{id}_gen.py`), checkers (`P{id}_check.py`), trace scripts (`P{id}_trace.py`), and testcases (`*.in`/`*.out`) inside `appendix/P{id}/`.
+- **Reference Specifications (`reference/`)**: Consult `reference/coding-style-guide.md` for C++ style conventions and `reference/SKILL.write-oi-solution.md` for solution structure.
