@@ -10,7 +10,7 @@
 
 ```text
 luogu-problem-solution/
-├── README.md                              # 项目总览、目录架构规范、进度统计与维护指南
+├── README.md                              # 项目总览、目录架构规范与维护指南
 ├── statement/                             # [题面库] 洛谷主站 Markdown 题面（共 16,391 题）
 │   ├── P1000-P1999/                       # 按千位题号分片（单目录 ≤ 1,000 文件）
 │   │   ├── P1001.md
