@@ -253,7 +253,7 @@ int main()
 				ans=vb[i];
 				goto hit;
 			}
-	hit:;
+hit:;
 	cout<<ans<<'\n';
 	return 0;
 }
