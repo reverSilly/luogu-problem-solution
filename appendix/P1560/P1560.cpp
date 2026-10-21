@@ -5,46 +5,47 @@
 #include<bits/stdc++.h>
 using namespace std;
 
-constexpr int mxn{130};           // N<=120,外加一圈边界 (+5 松弛)
+constexpr int mxn{125};           // N<=120 (+5 松弛)
+constexpr int dr[4]{1,-1,0,0};
+constexpr int dc[4]{0,0,1,-1};
 
-int N,B;
-int bar[mxn][mxn];                // 1=路障或棋盘外边界(边界一律当路障)
-bool vis[mxn][mxn];               // 已经过的格子
-int ans;
+int n,b,ans;
+bool obs[mxn][mxn],vis[mxn][mxn];
 
-void dfs(int x,int y,int len)     // 当前在 (x,y),已访问 len 个格子(含起点)
+bool in_bounds(int r,int c){return r>=0&&r<n&&c>=0&&c<n;}
+
+void dfs(int r,int c,int d,int cnt)
 {
-	if(len>ans)
-		ans=len;
-	for(int d=0;d<4;++d)              // 4 个方向都试;前进/后退方向会分别被跳掉/挡死
+	int nr=r+dr[d],nc=c+dc[d];
+	int steps=0;
+	while(in_bounds(nr,nc)&&!obs[nr][nc]&&!vis[nr][nc])
 	{
-		int dx=d==0?-1:(d==1?1:0);
-		int dy=d==2?-1:(d==3?1:0);
-		int t=x+dx,s=y+dy;
-		if(bar[t][s])                 // 该方向第一格就是路障/边界,不能起步
-			continue;
-		int z=len,cnt=0;
-		bool hitvis=false;
-		while(!bar[t][s])             // 一路直行,直到路障/边界
+		vis[nr][nc]=true;
+		r=nr;c=nc;
+		++steps;
+		nr+=dr[d];nc+=dc[d];
+	}
+	if(steps==0)
+		return;
+	ans=max(ans,cnt+steps);
+
+	// 只有撞上棋盘边界或路障 '#' 时才允许转弯 90 度; 若撞上自身已走轨迹则必须停止
+	if(!in_bounds(nr,nc)||obs[nr][nc])
+	{
+		int start_nd=(d<2)?2:0;
+		for(int nd=start_nd;nd<start_nd+2;++nd)
 		{
-			if(vis[t][s])             // 撞上已访问格:本次散步到此为止,不再转弯
-			{
-				if(z>ans)
-					ans=z;
-				hitvis=true;
-				break;
-			}
-			vis[t][s]=true;
-			++z;
-			++cnt;
-			t+=dx;
-			s+=dy;
+			int tr=r+dr[nd],tc=c+dc[nd];
+			if(in_bounds(tr,tc)&&!obs[tr][tc]&&!vis[tr][tc])
+				dfs(r,c,nd,cnt+steps);
 		}
-		if(!hitvis)                   // 停在路障前,再在下一层里左转/右转
-			dfs(t-dx,s-dy,z);
-		int bx=x+dx,by=y+dy;          // 回滚本段占用的格子
-		for(int k=0,tx=bx,ty=by;k<cnt;++k,tx+=dx,ty+=dy)
-			vis[tx][ty]=false;
+	}
+
+	// 回溯撤销本段滑行标记
+	for(int k=0;k<steps;++k)
+	{
+		vis[r][c]=false;
+		r-=dr[d];c-=dc[d];
 	}
 }
 
@@ -54,24 +55,26 @@ int main()
 	cout.tie(nullptr);
 	ios::sync_with_stdio(false);
 
-	cin>>N>>B;
-	for(int i=0;i<=N+1;++i)
+	if(!(cin>>n>>b))
+		return 0;
+	for(int i=0;i<b;++i)
 	{
-		bar[0][i]=bar[N+1][i]=1;
-		bar[i][0]=bar[i][N+1]=1;
+		string s;
+		cin>>s;
+		int col=static_cast<unsigned char>(s[0])-'A';
+		int row=0;
+		for(size_t j=1;j<s.size();++j)
+			if(isdigit(static_cast<unsigned char>(s[j])))
+				row=row*10+(s[j]-'0');
+		--row;
+		if(in_bounds(row,col))
+			obs[row][col]=true;
 	}
-	for(int i=0;i<B;++i)
-	{
-		string t;
-		cin>>t;                        // 形如 E2:字母为列,数字为行
-		int c=t[0]-'A'+1;
-		int r=0;
-		for(int j=1;j<(int)t.size();++j)
-			r=r*10+(t[j]-'0');
-		bar[r][c]=1;
-	}
-	vis[1][1]=true;
-	dfs(1,1,1);
+
+	vis[0][0]=true;
+	ans=1;
+	dfs(0,0,0,1);                 // 初始向下
+	dfs(0,0,2,1);                 // 初始向右
 	cout<<ans<<'\n';
 	return 0;
 }

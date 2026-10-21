@@ -5,47 +5,58 @@
 #include<bits/stdc++.h>
 using namespace std;
 
-vector<string>tk;      // 按空白切分出的记号
-int pos;               // 当前记号下标
-bool ok;               // 语法是否仍然合法
+vector<string> tok;
+int pos_idx;
+bool has_err;
 
-bool fac()             // 因子: not fac | true | false
+bool parse_not()
 {
-	if(pos<(int)tk.size()&&tk[pos]=="not")
+	if(pos_idx>=static_cast<int>(tok.size()))
 	{
-		++pos;
-		return !fac();
+		has_err=true;
+		return false;
 	}
-	if(pos<(int)tk.size()&&(tk[pos]=="true"||tk[pos]=="false"))
+	if(tok[pos_idx]=="not")
 	{
-		bool v=tk[pos]=="true";
-		++pos;
-		return v;
+		++pos_idx;
+		return !parse_not();
 	}
-	ok=false;
+	if(tok[pos_idx]=="true")
+	{
+		++pos_idx;
+		return true;
+	}
+	if(tok[pos_idx]=="false")
+	{
+		++pos_idx;
+		return false;
+	}
+	has_err=true;
 	return false;
 }
-bool term()            // 项: fac (and fac)*
+
+bool parse_and()
 {
-	bool v=fac();
-	while(ok&&pos<(int)tk.size()&&tk[pos]=="and")
+	bool val=parse_not();
+	while(!has_err&&pos_idx<static_cast<int>(tok.size())&&tok[pos_idx]=="and")
 	{
-		++pos;
-		bool w=fac();
-		v=v&&w;
+		++pos_idx;
+		bool rhs=parse_not();
+		val=val&&rhs;
 	}
-	return v;
+	return val;
 }
-bool expr()            // 表达式: term (or term)*
+
+bool parse_or()
 {
-	bool v=term();
-	while(ok&&pos<(int)tk.size()&&tk[pos]=="or")
+	bool val=parse_and();
+	while(!has_err&&pos_idx<static_cast<int>(tok.size())&&tok[pos_idx]=="or")
 	{
-		++pos;
-		bool w=term();
-		v=v||w;
+		++pos_idx;
+		bool rhs=parse_and();
+		val=val||rhs;
 	}
-	return v;
+	return val;
 }
 
 int main()
@@ -53,15 +64,23 @@ int main()
 	cin.tie(nullptr);
 	cout.tie(nullptr);
 	ios::sync_with_stdio(false);
-	string s;
-	while(cin>>s)
-		tk.push_back(s);
-	ok=true;
-	pos=0;
-	bool v=expr();
-	if(ok&&pos==(int)tk.size())    // 合法且记号被完整消费
-		cout<<(v?"true\n":"false\n");
-	else
+
+	string w;
+	while(cin>>w)
+		tok.push_back(w);
+
+	if(tok.empty())
+	{
 		cout<<"error\n";
+		return 0;
+	}
+
+	pos_idx=0;
+	has_err=false;
+	bool res=parse_or();
+	if(has_err||pos_idx!=static_cast<int>(tok.size()))
+		cout<<"error\n";
+	else
+		cout<<(res?"true\n":"false\n");
 	return 0;
 }

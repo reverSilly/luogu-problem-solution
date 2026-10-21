@@ -4,27 +4,34 @@
 // AC
 #include<bits/stdc++.h>
 using namespace std;
-using i64=long long;
 
-constexpr i64 LIM{100000000000000000LL};   // 1e17
-int pr[18]={2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61};
+constexpr long long lim{100000000000000000LL}; // 10^17
+constexpr int primes[15]{2,3,5,7,11,13,17,19,23,29,31,37,41,43,47};
 
-vector<pair<i64,i64>>cand;   // {n, d(n)}：所有指数非递增的候选数
-vector<i64>H;                // supernumber 序列(升序)
-
-// 按素数递增分配"非递增指数":cur=当前数,d=当前约数个数,maxe=上一个素数用过的指数上限
-void dfs(int idx,i64 cur,i64 d,int maxe)
+struct Cand
 {
-	cand.push_back({cur,d});
+	long long val,divs;
+	friend bool operator<(Cand a,Cand b)
+	{
+		return a.val!=b.val?a.val<b.val:a.divs>b.divs;
+	}
+};
+
+vector<Cand> cands;
+vector<long long> super_nums;
+
+void dfs(int idx,int max_e,long long cur_val,long long cur_divs)
+{
+	cands.push_back({cur_val,cur_divs});
 	if(idx>=15)
 		return;
-	i64 p=pr[idx];
-	for(int e=1;e<=maxe;++e)
+	long long p=primes[idx];
+	for(int e=1;e<=max_e;++e)
 	{
-		if(cur>LIM/p)
+		if(cur_val>lim/p)
 			break;
-		cur*=p;
-		dfs(idx+1,cur,d*(e+1),e);
+		cur_val*=p;
+		dfs(idx+1,e,cur_val,cur_divs*(e+1));
 	}
 }
 
@@ -33,23 +40,28 @@ int main()
 	cin.tie(nullptr);
 	cout.tie(nullptr);
 	ios::sync_with_stdio(false);
-	dfs(0,1,1,60);
-	sort(cand.begin(),cand.end());
-	i64 best=0;
-	for(auto[v,d]:cand)
-		if(d>best)
+
+	dfs(0,60,1,1);
+	sort(cands.begin(),cands.end());
+
+	long long best_d=0;
+	for(const auto& c:cands)
+		if(c.divs>best_d)
 		{
-			best=d;
-			H.push_back(v);
+			best_d=c.divs;
+			super_nums.push_back(c.val);
 		}
+
 	int m;
-	cin>>m;
+	if(!(cin>>m))
+		return 0;
 	for(int i=0;i<m;++i)
 	{
-		i64 a;
+		long long a;
 		cin>>a;
-		i64 ans=*(upper_bound(H.begin(),H.end(),a)-1);
-		cout<<ans<<'\n';
+		auto it=upper_bound(super_nums.begin(),super_nums.end(),a);
+		--it;
+		cout<<*it<<'\n';
 	}
 	return 0;
 }

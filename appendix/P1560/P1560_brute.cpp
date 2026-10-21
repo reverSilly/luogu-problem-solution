@@ -1,75 +1,62 @@
 #include<bits/stdc++.h>
 using namespace std;
 
-// 小数据朴素基准:逐格模拟。
-// 规则:能直行就必须直行;前方撞到边界/路障才允许左转或右转;
-//       前方是已访问格则本分支结束(不再转弯)。
-constexpr int mxn{40};
+int n,b,ans=1;
+bool obs[125][125],vis[125][125];
+int dr[4]={1,-1,0,0};
+int dc[4]={0,0,1,-1};
 
-int N,B;
-int bar[mxn][mxn];
-bool vis[mxn][mxn];
-int ans;
-int dx[4]={-1,1,0,0},dy[4]={0,0,-1,1};
-
-void go(int x,int y,int dir,int len)
+void go(int r,int c,int d,int cur)
 {
-	if(len>ans)
-		ans=len;
-	int nx=x+dx[dir],ny=y+dy[dir];
-	bool inb=(nx>=1&&nx<=N&&ny>=1&&ny<=N);
-	if(inb&&!bar[nx][ny]&&!vis[nx][ny])   // 前方可走:必须直行
+	ans=max(ans,cur);
+	int nr=r+dr[d],nc=c+dc[d];
+	if(nr>=0&&nr<n&&nc>=0&&nc<n&&!obs[nr][nc])
 	{
-		vis[nx][ny]=true;
-		go(nx,ny,dir,len+1);
-		vis[nx][ny]=false;
-		return;
+		if(vis[nr][nc])
+			return;
+		vis[nr][nc]=true;
+		go(nr,nc,d,cur+1);
+		vis[nr][nc]=false;
 	}
-	if(!inb||bar[nx][ny])                 // 撞到边界/路障:转 90°
+	else
 	{
-		int d0=dir<2?2:0,d1=dir<2?4:2;
-		for(int d=d0;d<d1;++d)
-		{
-			int mx=x+dx[d],my=y+dy[d];
-			if(mx>=1&&mx<=N&&my>=1&&my<=N&&!bar[mx][my]&&!vis[mx][my])
+		for(int nd=0;nd<4;++nd)
+			if((d<2)!=(nd<2))
 			{
-				vis[mx][my]=true;
-				go(mx,my,d,len+1);
-				vis[mx][my]=false;
+				int tr=r+dr[nd],tc=c+dc[nd];
+				if(tr>=0&&tr<n&&tc>=0&&tc<n&&!obs[tr][tc]&&!vis[tr][tc])
+				{
+					vis[tr][tc]=true;
+					go(tr,tc,nd,cur+1);
+					vis[tr][tc]=false;
+				}
 			}
-		}
 	}
-	// 前方是已访问格 -> 停止,不转弯
 }
 
 int main()
 {
-	cin.tie(nullptr);
-	cout.tie(nullptr);
-	ios::sync_with_stdio(false);
-	cin>>N>>B;
-	for(int i=0;i<B;++i)
+	cin>>n>>b;
+	for(int i=0;i<b;++i)
 	{
-		string t;
-		cin>>t;
-		int c=t[0]-'A'+1;
-		int r=0;
-		for(int j=1;j<(int)t.size();++j)
-			r=r*10+(t[j]-'0');
-		bar[r][c]=1;
+		string s;
+		cin>>s;
+		int col=s[0]-'A';
+		int row=stoi(s.substr(1))-1;
+		obs[row][col]=true;
 	}
-	vis[1][1]=true;
-	ans=1;
-	int d0[2]={1,3};                      // 起点只能向下或向右
-	for(int k=0;k<2;++k)
+	vis[0][0]=true;
+	if(1<n&&!obs[1][0])
 	{
-		int d=d0[k],mx=1+dx[d],my=1+dy[d];
-		if(mx>=1&&mx<=N&&my>=1&&my<=N&&!bar[mx][my]&&!vis[mx][my])
-		{
-			vis[mx][my]=true;
-			go(mx,my,d,2);
-			vis[mx][my]=false;
-		}
+		vis[1][0]=true;
+		go(1,0,0,2);
+		vis[1][0]=false;
+	}
+	if(1<n&&!obs[0][1])
+	{
+		vis[0][1]=true;
+		go(0,1,2,2);
+		vis[0][1]=false;
 	}
 	cout<<ans<<'\n';
 	return 0;

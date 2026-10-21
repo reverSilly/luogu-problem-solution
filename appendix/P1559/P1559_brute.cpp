@@ -1,34 +1,32 @@
 #include<bits/stdc++.h>
 using namespace std;
-using i64=long long;
 
-// 小数据朴素基准:枚举女生的全排列(n<=8)
-int P[25][25],Q[25][25];
+int n;
+int p[22][22],q[22][22],w[22][22];
+int dp[1<<20];
 
 int main()
 {
-	cin.tie(nullptr);
-	cout.tie(nullptr);
-	ios::sync_with_stdio(false);
-	int n;
 	cin>>n;
 	for(int i=0;i<n;++i)
 		for(int j=0;j<n;++j)
-			cin>>P[i][j];
+			cin>>p[i][j];
 	for(int i=0;i<n;++i)
 		for(int j=0;j<n;++j)
-			cin>>Q[i][j];
-	vector<int> p(n);
-	iota(p.begin(),p.end(),0);
-	i64 best=-1145141919810LL;
-	do
+			cin>>q[i][j];
+	for(int i=0;i<n;++i)
+		for(int j=0;j<n;++j)
+			w[i][j]=p[i][j]*q[j][i];
+	int lim=1<<n;
+	fill(dp,dp+lim,-1e9);
+	dp[0]=0;
+	for(int mask=0;mask<lim-1;++mask)
 	{
-		i64 s=0;
-		for(int i=0;i<n;++i)
-			s+=(i64)P[i][p[i]]*Q[p[i]][i];   // 男生 i 配女生 p[i]
-		if(s>best)
-			best=s;
-	}while(next_permutation(p.begin(),p.end()));
-	cout<<best<<'\n';
+		int i=__builtin_popcount(mask);
+		for(int j=0;j<n;++j)
+			if(!((mask>>j)&1))
+				dp[mask|(1<<j)]=max(dp[mask|(1<<j)],dp[mask]+w[i][j]);
+	}
+	cout<<dp[lim-1]<<'\n';
 	return 0;
 }

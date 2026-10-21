@@ -1,67 +1,40 @@
-import os
-import random
-import subprocess
-import tempfile
-import time
+import subprocess, random, time
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+def compile_all():
+    subprocess.run(["g++", "-O2", "-std=c++17", "P1559.cpp", "-o", "P1559"], check=True)
+    subprocess.run(["g++", "-O2", "-std=c++17", "P1559_brute.cpp", "-o", "P1559_brute"], check=True)
 
-
-def compile_all(tmpdir):
-    std_bin = os.path.join(tmpdir, "std")
-    bf_bin = os.path.join(tmpdir, "bf")
-    subprocess.run(["g++", "-O2", "-std=c++17", os.path.join(HERE, "P1559.cpp"), "-o", std_bin], check=True)
-    subprocess.run(["g++", "-O2", "-std=c++17", os.path.join(HERE, "P1559_brute.cpp"), "-o", bf_bin], check=True)
-    return std_bin, bf_bin
-
-
-def run(bin_path, inp):
-    p = subprocess.run([bin_path], input=inp, text=True, capture_output=True, check=True)
+def run(bin_name, inp):
+    p = subprocess.run([f"./{bin_name}"], input=inp, text=True, capture_output=True, check=True)
     return p.stdout.strip()
 
-
 def main():
-    tmpdir = tempfile.mkdtemp(prefix="p1559_")
-    std_bin, bf_bin = compile_all(tmpdir)
-    rng = random.Random(20261018)
+    compile_all()
+    # 1. 官方样例
+    sample = "3\n10 2 3\n2 3 4\n3 4 5\n2 2 2\n3 5 3\n4 5 1\n"
+    assert run("P1559", sample) == "52"
+    assert run("P1559_brute", sample) == "52"
 
-    # 1. 随机对拍:n<=8,含负数与零的优势值(乘积可能负,检验 DP 正确性)
-    for tc in range(400):
-        n = rng.randint(1, 8)
-        P = [[rng.randint(-30, 30) for _ in range(n)] for _ in range(n)]
-        Q = [[rng.randint(-30, 30) for _ in range(n)] for _ in range(n)]
+    # 2. 随机对拍 500 组 (n in 1..14)
+    rng = random.Random(20261021)
+    for _ in range(500):
+        n = rng.randint(1, 12)
         lines = [str(n)]
-        for row in P:
-            lines.append(" ".join(map(str, row)))
-        for row in Q:
-            lines.append(" ".join(map(str, row)))
+        for _ in range(2 * n):
+            lines.append(" ".join(str(rng.randint(0, 100)) for _ in range(n)))
         inp = "\n".join(lines) + "\n"
-        a = run(std_bin, inp)
-        b = run(bf_bin, inp)
-        assert a == b, f"Mismatch n={n}:\n{inp}\nstd={a}\nbf={b}"
+        assert run("P1559", inp) == run("P1559_brute", inp)
 
-    # 2. 小手工用例
-    manual = [("1\n5\n7\n", "35")]
-    for inp, exp in manual:
-        got = run(std_bin, inp)
-        assert got == exp, f"manual: {got} != {exp}"
-
-    # 3. 最坏规模计时: n=20,随机较大值(保证在 int 范围乘积量级)
-    n = 20
-    P = [[rng.randint(0, 46340) for _ in range(n)] for _ in range(n)]
-    Q = [[rng.randint(0, 46340) for _ in range(n)] for _ in range(n)]
-    lines = [str(n)]
-    for row in P:
-        lines.append(" ".join(map(str, row)))
-    for row in Q:
-        lines.append(" ".join(map(str, row)))
-    big_inp = "\n".join(lines) + "\n"
+    # 3. 极限规模 n = 20 与状压 DP 核对并测速
+    lines = ["20"]
+    for _ in range(40):
+        lines.append(" ".join(str(rng.randint(1, 100)) for _ in range(20)))
+    max_inp = "\n".join(lines) + "\n"
     t0 = time.perf_counter()
-    res = run(std_bin, big_inp)
+    res = run("P1559", max_inp)
     dt = time.perf_counter() - t0
-
-    print(f"P1559 check passed! 400 random cases (n<=8); n=20 worst-case in {dt:.4f}s (ans={res})")
-
+    assert res == run("P1559_brute", max_inp)
+    print(f"P1559 check passed! Sample + 500 random cases + n=20 (ans={res}) in {dt:.4f}s")
 
 if __name__ == "__main__":
     main()

@@ -5,59 +5,65 @@
 #include<bits/stdc++.h>
 using namespace std;
 
-constexpr int mxn{100005};        // L,O <= 1e5 (+5 松弛)
+constexpr int mxn{100005};        // L<=100000 (+5 松弛)
 
 int L,T,O;
-int seg[mxn*4];                   // 每段"出现过的颜色集合"的位掩码(0-based 颜色占第 c 位)
-int tag[mxn*4];                   // 懒标记:整段统一涂的颜色(0-based),-1 表示无
+int tr[mxn<<2],lz[mxn<<2];
 
-int ls(int i){return i*2+1;}
-int rs(int i){return i*2+2;}
-
-void build(int l,int r,int i)
+void build(int u,int l,int r)
 {
-	seg[i]=1;                     // 初值整块都是 1 号色 => 第 0 位
-	tag[i]=-1;
-	if(r-l==1)
+	lz[u]=0;
+	tr[u]=1<<0;                   // 初始全为 1 号颜色 (0-based 第 0 位)
+	if(l==r)
 		return;
 	int mid=(l+r)>>1;
-	build(l,mid,ls(i));
-	build(mid,r,rs(i));
+	build(u<<1,l,mid);
+	build(u<<1|1,mid+1,r);
 }
-void push_down(int i)
+
+void apply(int u,int mask)
 {
-	if(tag[i]<0)
-		return;
-	int t=tag[i];
-	seg[ls(i)]=seg[rs(i)]=1<<t;
-	tag[ls(i)]=tag[rs(i)]=t;
-	tag[i]=-1;
+	tr[u]=mask;
+	lz[u]=mask;
 }
-void upd(int Lq,int Rq,int c,int l,int r,int i)
+
+void pushdown(int u)
 {
-	if(Rq<=l||r<=Lq)
-		return;
-	if(Lq<=l&&r<=Rq)              // [l,r) 被完全覆盖:整段改色
+	if(lz[u])
 	{
-		seg[i]=1<<c;
-		tag[i]=c;
+		apply(u<<1,lz[u]);
+		apply(u<<1|1,lz[u]);
+		lz[u]=0;
+	}
+}
+
+void update(int u,int l,int r,int ql,int qr,int mask)
+{
+	if(ql<=l&&r<=qr)
+	{
+		apply(u,mask);
 		return;
 	}
-	push_down(i);
+	pushdown(u);
 	int mid=(l+r)>>1;
-	upd(Lq,Rq,c,l,mid,ls(i));
-	upd(Lq,Rq,c,mid,r,rs(i));
-	seg[i]=seg[ls(i)]|seg[rs(i)];
+	if(ql<=mid)
+		update(u<<1,l,mid,ql,qr,mask);
+	if(qr>mid)
+		update(u<<1|1,mid+1,r,ql,qr,mask);
+	tr[u]=tr[u<<1]|tr[u<<1|1];
 }
-int qry(int Lq,int Rq,int l,int r,int i)
+
+int query(int u,int l,int r,int ql,int qr)
 {
-	if(Rq<=l||r<=Lq)
-		return 0;
-	if(Lq<=l&&r<=Rq)
-		return seg[i];
-	push_down(i);
-	int mid=(l+r)>>1;
-	return qry(Lq,Rq,l,mid,ls(i))|qry(Lq,Rq,mid,r,rs(i));
+	if(ql<=l&&r<=qr)
+		return tr[u];
+	pushdown(u);
+	int mid=(l+r)>>1,res=0;
+	if(ql<=mid)
+		res|=query(u<<1,l,mid,ql,qr);
+	if(qr>mid)
+		res|=query(u<<1|1,mid+1,r,ql,qr);
+	return res;
 }
 
 int main()
@@ -66,27 +72,29 @@ int main()
 	cout.tie(nullptr);
 	ios::sync_with_stdio(false);
 
-	cin>>L>>T>>O;
-	build(0,L,0);
-	for(int i=0,op,a,b,c;i<O;++i)
+	if(!(cin>>L>>T>>O))
+		return 0;
+	build(1,0,L-1);
+
+	for(int i=0;i<O;++i)
 	{
-		char ch;
-		cin>>ch;
-		if(ch=='C')
+		char op;
+		int a,b;
+		cin>>op>>a>>b;
+		if(a>b)
+			swap(a,b);
+		--a;--b;
+		if(op=='C')
 		{
-			cin>>a>>b>>c;
-			--a;--b;--c;
-			if(a>b)
-				swap(a,b);
-			upd(a,b+1,c,0,L,0);
+			int c;
+			cin>>c;
+			--c;
+			update(1,0,L-1,a,b,1<<c);
 		}
 		else
 		{
-			cin>>a>>b;
-			--a;--b;
-			if(a>b)
-				swap(a,b);
-			cout<<__builtin_popcount((unsigned)qry(a,b+1,0,L,0))<<'\n';
+			int mask=query(1,0,L-1,a,b);
+			cout<<__builtin_popcount(mask)<<'\n';
 		}
 	}
 	return 0;

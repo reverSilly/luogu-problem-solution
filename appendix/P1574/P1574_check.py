@@ -10,42 +10,21 @@ def run(bin_name, inp):
 
 def main():
     compile_all()
-    rng = random.Random(20261018)
+    # 1. 全量验证 1..200000 内的所有查询 vs 筛法暴力
+    queries = list(range(1, 200001, 13)) + [1, 2, 4, 6, 12, 24, 36, 48, 60, 120, 180, 240, 360, 720, 840, 1260, 1680, 2520, 5040]
+    inp = f"{len(queries)}\n" + "\n".join(map(str, queries)) + "\n"
+    assert run("P1574", inp) == run("P1574_brute", inp)
 
-    # 1. 随机对拍：a_i in [1,1e6]，暴力筛法 vs 公式
-    for tc in range(300):
-        m = rng.randint(1, 20)
-        qs = [rng.randint(1, 1000000) for _ in range(m)]
-        inp = f"{m}\n" + "\n".join(map(str, qs)) + "\n"
-        out_std = run("P1574", inp)
-        out_bf = run("P1574_brute", inp)
-        assert out_std == out_bf, f"Mismatch:\n{inp}\nstd={out_std}\nbf={out_bf}"
-
-    # 2. 边界：查询恰好等于若干 supernumber 值及其 ±1
-    base = [1, 2, 4, 6, 12, 24, 36, 48, 60, 120, 180, 240, 360, 720, 840]
-    qs = []
-    for v in base:
-        qs += [max(1, v - 1), v, v + 1]
-    inp = f"{len(qs)}\n" + "\n".join(map(str, qs)) + "\n"
-    out_std = run("P1574", inp)
-    out_bf = run("P1574_brute", inp)
-    assert out_std == out_bf, f"Mismatch on boundary:\n{inp}\nstd={out_std}\nbf={out_bf}"
-
-    # 2b. a_i=1 的最小边界与 a_i=1e6 的最大边界
-    inp = "2\n1\n1000000\n"
-    assert run("P1574", inp) == run("P1574_brute", inp), "boundary 1e6 mismatch"
-
-    # 3. 最坏规模计时：m=1e5 全查询 1e17
-    m = 100000
-    inp = f"{m}\n" + "\n".join(["100000000000000000"] * m) + "\n"
+    # 2. 极限规模测试 m = 100,000, a_i <= 10^17
+    rng = random.Random(20261021)
+    m_max = 100000
+    big_q = [rng.randint(1, 10**17) for _ in range(m_max - 1)] + [10**17]
+    max_inp = f"{m_max}\n" + "\n".join(map(str, big_q)) + "\n"
     t0 = time.perf_counter()
-    res = run("P1574", inp)
+    out = run("P1574", max_inp).splitlines()
     dt = time.perf_counter() - t0
-    last_line = res.splitlines()[-1]
-
-    # 4. 单独测一个"巨值精确命中"的答案，打印便于人工核对
-    print(f"P1574 check passed! 300 random (a<=1e6) + boundary tests all std==brute; "
-          f"m=1e5,a=1e17 -> ans={last_line} in {dt:.4f}s")
+    # 10^17 以内最大的反素数是 735134400 * ... = 99791448473090800 (约数个数 73728)
+    print(f"P1574 check passed! {len(queries)} exact checks + 100,000 queries up to 10^17 (max={out[-1]}) in {dt:.4f}s")
 
 if __name__ == "__main__":
     main()

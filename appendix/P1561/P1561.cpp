@@ -4,12 +4,24 @@
 // AC
 #include<bits/stdc++.h>
 using namespace std;
-using i64=long long;
 
-constexpr int mxn{25005};         // n<=25000 (+5 松弛)
+constexpr int mxn{25005};         // N<=25000 (+5 松弛)
+
+struct Cow
+{
+	int u,d;
+	// Johnson 法则: 先排 u < d 的组(按 u 升序), 再排 u >= d 的组(按 d 降序)
+	friend bool operator<(Cow a,Cow b)
+	{
+		int ga=(a.u<a.d)?0:1;
+		int gb=(b.u<b.d)?0:1;
+		if(ga!=gb)
+			return ga<gb;
+		return ga==0?(a.u<b.u):(a.d>b.d);
+	}
+}c[mxn];
 
 int n;
-struct{int u,d;}a[mxn];           // u=上山时间, d=下山时间
 
 int main()
 {
@@ -17,28 +29,19 @@ int main()
 	cout.tie(nullptr);
 	ios::sync_with_stdio(false);
 
-	cin>>n;
+	if(!(cin>>n))
+		return 0;
 	for(int i=0;i<n;++i)
-		cin>>a[i].u>>a[i].d;
-	// Johnson 排序: 上山时间<=下山时间的一组在前(按上山升序),
-	// 其余在后(按下山降序)
-	sort(a,a+n,[](auto x,auto y){
-		bool gx=x.u<=x.d,gy=y.u<=y.d;
-		if(gx!=gy)
-			return gx>gy;
-		if(gx)
-			return x.u<y.u;
-		return x.d>y.d;
-	});
-	i64 remD{0},curU{0},ans{0};
-	for(int i=0;i<n;++i)
-		remD+=a[i].d;             // 先累计出总下山时间
+		cin>>c[i].u>>c[i].d;
+
+	sort(c,c+n);
+
+	long long sum_u=0,finish_d=0;
 	for(int i=0;i<n;++i)
 	{
-		curU+=a[i].u;
-		ans=max(ans,curU+remD);   // f(k)=上山前缀+下山后缀
-		remD-=a[i].d;
+		sum_u+=c[i].u;
+		finish_d=max(finish_d,sum_u)+c[i].d;
 	}
-	cout<<ans<<'\n';
+	cout<<finish_d<<'\n';
 	return 0;
 }
