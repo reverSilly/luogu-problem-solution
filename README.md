@@ -37,11 +37,14 @@ luogu-problem-solution/
 │   │   ├── P1504_brute.cpp                # 暴力基准（brute-force）
 │   │   └── P1504_check.py                 # 对拍脚本（checker）
 │   └── ...                                # 仅在题目复杂、确需打表或对拍时按需建夹（绝非每题必配）
-├── reference/                             # [参考规范] AI 解题 Skill 与 C++ 编码风格指南
+├── reference/                             # [参考规范] 解题 Skill、编码风格指南与题库统计
 │   ├── SKILL.write-oi-solution.md         # 发现式 OI 题解生成规范（思维链优先与五段式输出）
-│   └── coding-style-guide.md              # 竞赛 C++ 编码风格规范（基于 606 份源码提炼）
-└── scripts/                               # [维护脚本] 自动化目录整理与迁移工具
-    └── reorganize.py                      # 支持 git mv 的仓库重构与增量文件自动归档脚本
+│   ├── coding-style-guide.md              # 竞赛 C++ 编码风格规范（基于 606 份源码提炼）
+│   ├── problem-statistics.md              # 题库难度 / 标签统计报告（脚本生成，请勿手改）
+│   └── problem-data.csv                   # 逐题难度、标签、题解状态明细（脚本生成）
+└── scripts/                               # [维护脚本] 自动化目录整理与统计生成工具
+    ├── reorganize.py                      # 支持 git mv 的仓库重构与增量文件自动归档脚本
+    └── gen_statistics.py                  # 从题面元数据生成 reference/ 下的统计报告与 CSV
 ```
 
 ### 目录职责总览
@@ -51,8 +54,8 @@ luogu-problem-solution/
 | `statement/` | 原始题目题面（含背景、描述、输入输出格式、提示与元数据） | `statement/P{xxxx}-P{yyyy}/P{id}.md` |
 | `solution/` | **核心产出**：完整题解报告（以思维链推导与引理证明为核心，附简洁参考代码） | `solution/P{xxxx}-P{yyyy}/P{id}_solution.md` |
 | `appendix/` | **按需辅助**：解题草稿与中间文件（仅在题目复杂、确需打表或对拍时创建，非必交项） | `appendix/P{id}/P{id}*` |
-| `reference/` | 题解方法论（AI Skill 定义）与 C++ 竞赛代码规范文档 | `reference/*.md` |
-| `scripts/` | 仓库目录迁移、新增文件自动归档与结构校验脚本 | `scripts/reorganize.py` |
+| `reference/` | 题解方法论（AI Skill 定义）、C++ 竞赛代码规范与题库难度/标签统计 | `reference/*.md`、`reference/problem-data.csv` |
+| `scripts/` | 仓库目录迁移、新增文件自动归档、结构校验与统计报告生成脚本 | `scripts/reorganize.py`、`scripts/gen_statistics.py` |
 
 ## 二、四大核心分类详解
 
@@ -122,9 +125,9 @@ luogu-problem-solution/
 - **严禁搜寻原始测试数据**：不要在 `appendix/` 中收集或试图从外部抓取原题测试点（`.in`/`.out`）。
 - 已归档题目的清单不在此维护，直接浏览 `appendix/` 目录即可。
 
-### 4. 参考规范（`reference/`）
+### 4. 参考规范与题库统计（`reference/`）
 
-存放驱动整个项目的两份核心标准文档：
+存放驱动整个项目的标准文档，以及由脚本自动生成的题库统计文件：
 
 - **`reference/SKILL.write-oi-solution.md`**：定义 AI 撰写算法题解的核心哲学（思维链至上、代码从简、拒绝无效工程劳动）、五段式输出模板、引理证明要求及仓库目录读写约定。
 - **`reference/coding-style-guide.md`**：基于对 606 个既有 `.cpp` 源码全量分析提炼出的描述性编码规范，核心特征包括：
@@ -134,6 +137,8 @@ luogu-problem-solution/
   - 线段树等递归结构采用标志性的自递归 Lambda **`sth` 模式**（半开区间 `[l, r)`，根下标 `0`）。
   - I/O 加速固定顺序：`cin.tie(nullptr); cout.tie(nullptr); ios::sync_with_stdio(false);`，换行一律使用 `'\n'`。
   - 缩进采用 Tab，运算符紧凑不留空格，保留注释化的 `// cerr<<...` 作为可随时启用的调试层。
+- **`reference/problem-statistics.md`**：全库难度分布、标签分布、标签共现、题解覆盖率的统计报告，**由 `scripts/gen_statistics.py` 自动生成，请勿手工编辑**。
+- **`reference/problem-data.csv`**：逐题明细（题号、名称、难度、标签、是否有题解/附件/题面失效），供筛选与二次分析。
 
 ## 三、日常使用与维护指南（Maintenance Guide）
 
@@ -174,3 +179,46 @@ python3 scripts/reorganize.py
 # 在 Git 仓库中执行架构整理（自动检测并使用 git mv 保留历史记录）
 python3 scripts/reorganize.py --git
 ```
+
+### 4. 查看与刷新题库统计（`reference/problem-statistics.md`）
+
+仓库内置了一份由题面元数据自动汇总的统计报告，用于回答「我库里到底有多少题、难度怎么分布、哪些考点最常出现、还差多少题没写」这类问题。**它是脚本产物，任何时候都不要手工编辑**。
+
+**看什么**（打开 `reference/problem-statistics.md`）：
+
+| 想了解的问题 | 看哪一节 |
+| :--- | :--- |
+| 全库规模：题面数、标签种数、题解数、平均每题几个标签 | 一、总览 |
+| 难度分布，以及「入门 / 普及题」与「高难题」各占多少 | 二、难度分布 |
+| 最常考的标签是什么，标签分几类（算法 / 出处 / 年份 / 评测标记） | 三、标签分布、3.1 按类别汇总 |
+| 难度爬升时考点如何演进（各难度层的高频算法标签） | 3.2 各难度层的高频算法标签 |
+| 哪些考点常成套出现，适合做专题训练 | 3.3 标签组合（共现 Top 30） |
+| 各难度还差多少题没写，当前完成度如何 | 四、题解覆盖情况 |
+| 按题号区间的推进情况 | 五、题号分段分布 |
+| 统计口径、已知数据偏差（**引用数字前必看**） | 六、数据质量与口径说明 |
+
+**筛选题目**用同目录下的 `reference/problem-data.csv`（UTF-8 BOM，Excel / WPS 可直接双击打开），字段为：题号、题目名称、难度、标签数、标签、有题解、有附件、题面失效。
+
+```bash
+# 查某道题的难度与全部标签
+grep '^P1004,' reference/problem-data.csv
+
+# 列出所有带「线段树」标签、但还没写题解的题
+awk -F',' '$5 ~ /线段树/ && $6 == "否" {print $1, $2}' reference/problem-data.csv
+
+# 看看各难度的题解完成情况
+cut -d',' -f3,6 reference/problem-data.csv | sort | uniq -c
+```
+
+**刷新统计**（新增题面 / 题解之后）：
+
+```bash
+# 先校验元数据是否齐全（只读，不写文件）
+python3 scripts/gen_statistics.py --check
+
+# 重新生成 reference/problem-statistics.md 与 reference/problem-data.csv
+python3 scripts/gen_statistics.py
+```
+
+> 脚本只读取 `statement/`、`solution/`、`appendix/`，不会修改任何题面或题解，可以放心反复执行。
+> 注意：存档里的难度标签存在历史遗留写法（`提高/省选-`、`NOI+`、`Level 8` 等）且高难度段占比偏高，报告第六节对此有说明；**涉及具体某题难度时请以洛谷原题页面为准**。
