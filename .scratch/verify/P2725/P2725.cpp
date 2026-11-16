@@ -1,12 +1,14 @@
 // 题目：P2725 [USACO3.1] 邮票 Stamps
-// f[v]=凑出 v 的最少邮票数（完全背包求最小个数）。
-// 答案 = 第一个 f[v]>k 的 v 减 1；f[v]≥ceil(v/maxa) ⇒ 第一个缺口 ≤ k*maxa+1。
+// dp[v]=凑出面值 v 所需的最少邮票张数（每种面值无限张，完全背包求最小件数）。
+// 答案=第一个 dp[v]>k 的 v 减 1；若 dp[1]>k 则输出 0。
+// 上界：k 张邮票最大和为 k*max(a)，故只需算到 k*max(a)+1。
 #include<bits/stdc++.h>
 using namespace std;
 
-constexpr int mxv{2000005},inf{1145141919};
+constexpr int mxn{55},mxv{2000005};	// mxv=k*a_max+1=200*10000+1，+5 松弛
+constexpr int inf{1145141919};
 
-int k,n,a[55],f[mxv];
+int k,n,a[mxn],dp[mxv];
 
 int main()
 {
@@ -15,17 +17,21 @@ int main()
 	ios::sync_with_stdio(false);
 
 	cin>>k>>n;
+	int mx=0;
 	for(int i=0;i<n;++i)
-		cin>>a[i];
-	sort(a,a+n);
-	n=unique(a,a+n)-a;	// 去重：重复面值不改变可表示性
-	int mx=k*a[n-1]+1,ans=mx;	// 第一个缺口必不超过 mx
-	for(int v=1;v<=mx;++v)
 	{
-		f[v]=inf;
-		for(int i=0;i<n&&a[i]<=v;++i)
-			f[v]=min(f[v],f[v-a[i]]+1);
-		if(f[v]>k)
+		cin>>a[i];
+		mx=max(mx,a[i]);
+	}
+	fill_n(dp,k*mx+2,inf);	// 全局默认 0 会被当成「0 张可达」，必须显式填 INF
+	dp[0]=0;
+	int ans=0;
+	for(int v=1;v<=k*mx+1;++v)
+	{
+		for(int i=0;i<n;++i)
+			if(a[i]<=v)
+				dp[v]=min(dp[v],dp[v-a[i]]+1);
+		if(dp[v]>k)	// 第一个断点：v 不可达，答案 v-1
 		{
 			ans=v-1;
 			break;
